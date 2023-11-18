@@ -154,10 +154,10 @@ def data_preparation(dform,os):
     dform,encoder_col=dataframe_encoder(dform,['Doors','Model'],os)
 
     #one hot encoding
-    dform.info()
-    print(dform.columns)
+    #dform.info()
+    #print(dform.columns)
     dform = pd.get_dummies(dform, columns=[i for i in df.columns if df[i].dtype=='object'])
-    print(dform.columns)
+    #print(dform.columns)
 
     #create scaler
     scaler_x = RobustScaler()
