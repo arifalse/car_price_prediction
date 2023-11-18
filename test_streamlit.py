@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd 
 import joblib
 from data_geter import *
-#from stramlit_functions import *
 
 def form_value() :
     data=get_dtypes()
