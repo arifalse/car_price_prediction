@@ -4,12 +4,25 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from scipy.special import boxcox1p
+import numpy as np
+import requests
+import shutil
+import joblib
+from sklearn.preprocessing import OneHotEncoder,LabelEncoder,RobustScaler
+from sklearn.model_selection import train_test_split
 
-url='https://github.com/arifalse/car_price_prediction/raw/main/car_price_prediction.csv'
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+import pickle
+import time
 
-df=pd.read_csv(r'C:\Users\arif\Downloads\car_price_prediction.csv')
+#dataset origin
+df=pd.read_csv('https://github.com/arifalse/car_price_prediction/raw/main/car_price_prediction.csv')
 df=df[df.Levy!='-']
 df['Mileage']=df['Mileage'].str.split(' ',expand=True)[0].astype('int64')
+
+#dataset reference columns
+df_ref=pd.read_csv('https://github.com/arifalse/bootcamp_datascience_files/raw/main/dataset_columns_modelling_2.csv')
 
 def get_dtypes() :
     dict_result={}
@@ -59,7 +72,7 @@ def skewness_check(df,columns,plot=True) :
 def get_column_with_high_skewness(df) :
 
   #calculate skewness
-  dict_col_skew_value=skewness_check(df,[i for i in df.drop('Price',axis=1) if df[i].dtype!='object'],plot=False)
+  dict_col_skew_value=skewness_check(df,[i for i in df if df[i].dtype!='object'],plot=False)
 
   #filter it
   columns_with_high_skew=[i for i,j in dict_col_skew_value.items() if j >0.7]
@@ -68,75 +81,112 @@ def get_column_with_high_skewness(df) :
   return columns_with_high_skew
 
 #### FUNCTION TO CHECK ENCODE COLUMN IN DATAFRAME + SAVE ITS ENCODER
-def dataframe_encoder(df,columns) :
+def dataframe_encoder(df,columns,os) :
 
   #dictionary to store encoder
   encoder_col = {}
 
   #loop to encode each column, then store it in list encoder_col
   for col in columns :
-    lbl=LabelEncoder()
-    lbl.fit(df[col].values.tolist())
-    df[col]=lbl.transform(df[col].values.tolist())
+    if col == 'Doors' :
 
-    #save it to dictionary
-    encoder_col[col]=lbl
-    print(f"encoder for column {col} saved in encoder_col")
+        if 'door_encoder.pkl' not in os.listdir():
 
+            response = requests.get('https://github.com/arifalse/bootcamp_datascience_files/raw/main/door_encoder.pkl', stream=True)
+            with open('door_encoder.pkl', 'wb') as fin1:
+                    shutil.copyfileobj(response.raw, fin1)
+            pkl_door = open('door_encoder.pkl', 'rb')
+            le_door = pickle.load(pkl_door)
+            fin1.close()
+            #os.remove("door_encoder.pkl")
+
+        else :
+            
+            pkl_door = open('door_encoder.pkl', 'rb')
+            le_door = pickle.load(pkl_door)
+            #os.remove("door_encoder.pkl")
+
+
+        df[col]=le_door.transform(df[col].values.tolist())
+    
+    elif col=='Model' :
+        
+        if 'model_encoder.pkl' not in os.listdir() :
+            response = requests.get('https://github.com/arifalse/bootcamp_datascience_files/raw/main/model_encoder.pkl', stream=True)
+            with open('model_encoder.pkl', 'wb') as fin2:
+                    shutil.copyfileobj(response.raw, fin2)
+            pkl_model = open('model_encoder.pkl', 'rb')
+            le_model = pickle.load(pkl_model)
+            fin2.close()
+            #os.remove("model_encoder.pkl")
+        else :
+            pkl_model = open('model_encoder.pkl', 'rb')
+            le_model = pickle.load(pkl_model) 
+
+        df[col]=le_model.transform(df[col].values.tolist())
+        
   return df,encoder_col
 
-def data_preparation(dataset):
-
-    #drop duplicates by id
-    dataset.drop_duplicates('ID',inplace=True)
+def data_preparation(dform,os):
 
     # Tranform | Replace '-' in levy column to nan then covert  to float then fill it with mean
-    dataset['Levy']=dataset.Levy.replace('-',np.NaN)
-    dataset['Levy']=dataset['Levy'].astype('float64')
-    dataset['Levy']=dataset.Levy.replace(np.NaN,dataset['Levy'].mean())
+    dform['Levy']=dform.Levy.replace('-',np.NaN)
+    dform['Levy']=dform['Levy'].astype('float64')
+    dform['Levy']=dform.Levy.replace(np.NaN,df['Levy'].mean())
 
     # Tranform | lower string value in object columns
-    for i in dataset.columns :
-        if dataset[i].dtype=='object' :
-            dataset[i]=dataset[i].str.lower()
-
-    #removing ID columns
-    dataset.drop('ID',axis=1,inplace=True)
-
-    #change mileage to float
-    dataset['Mileage']=[i.split(' ')[0] for i in dataset.Mileage]
-    dataset['Mileage']=dataset['Mileage'].astype('float64')
-    dataset[['Mileage']].head(2)
+    for i in dform.columns :
+        if dform[i].dtype=='object' :
+            try :
+                dform[i]=dform[i].str.lower()
+            except :
+                pass
 
     #turbo egine feature
-    dataset['turbo_engine']=dataset['Engine volume'].str.split(' ',expand=True)[1]
-    dataset['Engine volume']=dataset['Engine volume'].str.split(' ',expand=True)[0]
-    dataset['Engine volume']=[float(i) for i in dataset['Engine volume']]
+    dform['Engine volume']=dform['Engine volume'].astype(str)
+    dform['turbo_engine']=0
+    dform['Engine volume']=dform['Engine volume'].str.split(' ',expand=True)[0]
+    dform['Engine volume']=[float(i) for i in dform['Engine volume']]
 
     #skewness tratmen
-    columns_with_high_skew=get_column_with_high_skewness(dataset)
+    columns_with_high_skew=get_column_with_high_skewness(dform)
     lam = 0.20
     for col in columns_with_high_skew:
-        dataset[col] = boxcox1p(dataset[col], lam)
+        dform[col] = boxcox1p(dform[col], lam)
 
     #encoder
-    testdf,encoder_col=dataframe_encoder(testdf,['Doors','Model'])
+    dform,encoder_col=dataframe_encoder(dform,['Doors','Model'],os)
 
+    #one hot encoding
+    dform.info()
+    print(dform.columns)
+    dform = pd.get_dummies(dform, columns=[i for i in df.columns if df[i].dtype=='object'])
+    print(dform.columns)
 
+    #create scaler
+    scaler_x = RobustScaler()
+    scaler_x = scaler_x.fit(dform)
+    ddformf=pd.DataFrame(scaler_x.transform(dform))
 
-dataset
-"""def main () :
-    st.title('CAR PRICE PREDICTION')
-    menu=['Menu','ML Page']
-    choice=st.sidebar.selectbox('AKU',menu)
+    #add require column
+    for i in df_ref.columns:
+        if i not in dform.columns :
+            dform[i]=0
+    dform=dform[df_ref.columns]
 
-    if choice == 'Menu' :
-        st.subheader('Menu Page')
-        education = st.selectbox('Education', ["Below Secondary", "Bachelor's", "Master's & above"])
-        Manufacture = st.selectbox('Manufacturer', ['xxxx'])
-        st.radio('Gender', ['m','f'])
-    elif choice == 'ML Page' :
-        st.subheader('ML Page')
-if __name__ == '__main__' :
-    main()
-""" 
+    #predict
+    print(dform)
+    if 'random_forrest_regressor.pkl' not in os.listdir() :
+        response = requests.get('https://github.com/arifalse/bootcamp_datascience_files/raw/main/random_forrest_regressor.pkl', stream=True)
+        with open('random_forrest_regressor.pkl', 'wb') as modelio:
+                shutil.copyfileobj(response.raw, modelio)
+        
+        pkl_modelregression = open('random_forrest_regressor.pkl', 'rb')
+        model_regression = pickle.load(pkl_modelregression)
+        modelio.close()
+    else :
+        model_regression = pickle.load(open('random_forrest_regressor.pkl', 'rb'))
+     
+    predicted_price=model_regression.predict(dform)
+    val=predicted_price*10000
+    return '$'+str(round(val[0],2))
