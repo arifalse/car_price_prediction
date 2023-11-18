@@ -1,7 +1,5 @@
 import pandas as pd
 import os
-import seaborn as sns
-import matplotlib.pyplot as plt
 from scipy.stats import norm
 from scipy.special import boxcox1p
 import numpy as np
