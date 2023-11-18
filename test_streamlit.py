@@ -9,6 +9,7 @@ def form_value() :
     dict_element={}
     for i,j in data.items() :
         if j in ['object','int64'] :
+            #dict_element[i]=st.selectbox(i.capitalize(),get_unique(i),index=None,placeholder="Choose an option")
             dict_element[i]=st.selectbox(i.capitalize(),get_unique(i))
         else :
             print(i)
@@ -20,15 +21,20 @@ st.title('CAR PRICE PREDICTION')
 #Form construction
 with st.form("my_form"):
 
-   #st.write("Car Price Prediction Form")
-
    #generate each field from dataset columns
    data=form_value()
 
    # Every form must have a submit button.
    submitted = st.form_submit_button("Submit")
    if submitted:
-       data_form=pd.DataFrame.from_dict(data, orient='index').transpose()
-       #df_form=pd.DataFrame.from_dict(data,orient='columns')
-       st.write(data_form)
+      if len(data)==16 :
+        data_form=pd.DataFrame.from_dict(data, orient='index').transpose()
+        #df_form=pd.DataFrame.from_dict(data,orient='columns')
+        data_form=data_preparation(data_form,os)
+
+        st.subheader("Price Prediction for this Car")
+        st.subheader(data_form)
+      else :
+        st.subheader('Please fill all value on this Form')
+
 
