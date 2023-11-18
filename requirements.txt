@@ -1,0 +1,8 @@
+pandas==2.0.1
+numpy
+scipy
+requests
+os
+scikit-learn==1.2.2
+seaborn
+pickle
