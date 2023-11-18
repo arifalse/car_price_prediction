@@ -1,8 +1,6 @@
 pandas==2.0.1
+scikit-learn==1.2.2
 numpy
 scipy
-requests
-os
-scikit-learn==1.2.2
 seaborn
 pickle
