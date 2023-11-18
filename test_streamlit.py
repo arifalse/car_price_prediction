@@ -16,43 +16,19 @@ def form_value() :
     return dict_element
 
 st.title('CAR PRICE PREDICTION')
+
+#Form construction
 with st.form("my_form"):
-   st.write("Car Price Prediction Form")
 
-   form_value()
+   #st.write("Car Price Prediction Form")
 
-   # Every form must have a submit button.
-   submitted = st.form_submit_button("Submit")
-   if submitted:
-       st.write("succes")
-
-
-
-
-
-
-"""with st.form("my_form"):
-   st.write("Car Price Prediction Form")
-
-   slider_val = st.slider("Form slider")
-   checkbox_val = st.checkbox("Form checkbox")
+   #generate each field from dataset columns
+   data=form_value()
 
    # Every form must have a submit button.
    submitted = st.form_submit_button("Submit")
    if submitted:
-       st.write("slider", slider_val, "checkbox", checkbox_val)
-"""
-"""get_dtypes()
-
-dtypes=get_dtypes()
-subheader_dict={}
-element_dict={}
-for i in dtypes :
-    title=st.title(i)
-    st.selectbox
-"""
-#st.title('CAR PRICE PREDICTION')
-
-#st.subheader('Menu Page')
-#('yeet')
+       data_form=pd.DataFrame.from_dict(data, orient='index').transpose()
+       #df_form=pd.DataFrame.from_dict(data,orient='columns')
+       st.write(data_form)
 
