@@ -1,6 +1,5 @@
 import pandas as pd
 import os
-from scipy.stats import norm
 from scipy.special import boxcox1p
 import numpy as np
 import requests
