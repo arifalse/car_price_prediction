@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd 
-import joblib
 from data_geter import *
 
 def form_value() :
