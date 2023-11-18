@@ -11,6 +11,8 @@ def form_value() :
         if j in ['object','int64'] :
             #dict_element[i]=st.selectbox(i.capitalize(),get_unique(i),index=None,placeholder="Choose an option")
             dict_element[i]=st.selectbox(i.capitalize(),get_unique(i))
+        #elif i=='Levy' :
+        #   pass
         else :
             print(i)
             dict_element[i]=st.slider(i.capitalize(),float(get_min_max(i)[0]),float(get_min_max(i)[1]))
