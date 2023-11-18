@@ -128,7 +128,7 @@ def data_preparation(dform,os):
     # Tranform | Replace '-' in levy column to nan then covert  to float then fill it with mean
     dform['Levy']=dform.Levy.replace('-',np.NaN)
     dform['Levy']=dform['Levy'].astype('float64')
-    dform['Levy']=dform.Levy.replace(np.NaN,df['Levy'].mean())
+    #dform['Levy']=dform.Levy.replace(np.NaN,df['Levy'].mean())
 
     # Tranform | lower string value in object columns
     for i in dform.columns :
